@@ -11,7 +11,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 
 @Route(value = "reset-password", autoLayout = false)
-@PageTitle("Reset Password | Helix")
+@PageTitle("Reset Password")
 @AnonymousAllowed
 public class ResetPasswordView extends Div {
 

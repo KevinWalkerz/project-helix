@@ -1,5 +1,6 @@
 package com.helix.zibrary.data.image.services;
 
+import com.helix.zibrary.data.global.entities.ProgramSetup;
 import com.helix.zibrary.data.image.repositories.ImageFileRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,9 +18,7 @@ import java.util.*;
 @Service
 public class ImageFileService {
 
-//    Setup setup;
-//
-//    PropertiesData propertiesData;
+    ProgramSetup setup;
 
     private final ImageFileRepository imageFileRepository;
 

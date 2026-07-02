@@ -24,6 +24,11 @@
     box-sizing: border-box;
     min-height: 3rem;
     padding: 0 var(--lumo-space-m);
+    gap: var(--lumo-space-s);
+}
+
+.app-header-actions {
+    flex-shrink: 0;
 }
 
 .app-navbar-actions {
@@ -43,7 +48,7 @@
     border: 1px solid var(--lumo-contrast-20pct);
     border-radius: var(--lumo-border-radius-m);
     background: var(--lumo-contrast-5pct);
-    margin-inline-start: var(--lumo-space-s);
+    margin-inline-start: 0;
 }
 
 .language-button {
@@ -101,4 +106,8 @@ vaadin-side-nav:has(vaadin-side-nav-item:only-child)::after {
     max-width: 14em;
     min-width: 100%;
     white-space: normal;
+}
+
+.theme-toggle-button {
+    min-width: 2.5rem;
 }

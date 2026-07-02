@@ -1,5 +1,6 @@
 package com.helix.zibrary.data.security.entities;
 
+import com.helix.zibrary.data.image.entities.ImageFile;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,6 +29,10 @@ public class UserCredentials{
     private String hashedPassword;
 
     private String registeredName;
+
+    @JoinColumn(name = "profile_picture_id", referencedColumnName = "id")
+    @OneToOne(cascade = CascadeType.ALL)
+    private ImageFile profilePicture;
 
     private boolean active;
 

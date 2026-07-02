@@ -11,7 +11,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 
 @Route(value = "otp", autoLayout = false)
-@PageTitle("Verify OTP | Helix")
+@PageTitle("Verify OTP")
 @AnonymousAllowed
 public class OtpView extends Div {
 

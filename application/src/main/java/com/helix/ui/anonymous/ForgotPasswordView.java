@@ -11,7 +11,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 
 @Route(value = "forgot-password", autoLayout = false)
-@PageTitle("Forgot Password | Helix")
+@PageTitle("Forgot Password")
 @AnonymousAllowed
 public class ForgotPasswordView extends Div {
 

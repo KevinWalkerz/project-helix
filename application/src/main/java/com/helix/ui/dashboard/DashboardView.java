@@ -10,7 +10,7 @@ import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
 
 @Route(value = "", layout = MainLayout.class)
-@PageTitle("Helix | Dashboard")
+@PageTitle("Dashboard")
 @PermitAll
 public class DashboardView extends VerticalLayout {
 

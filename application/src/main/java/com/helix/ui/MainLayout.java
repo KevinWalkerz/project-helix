@@ -10,17 +10,20 @@ import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.avatar.Avatar;
-import com.vaadin.flow.component.avatar.AvatarVariant;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.html.*;
+import com.helix.configs.HelixUiConfiguration;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.SvgIcon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.*;
 import com.vaadin.flow.component.sidenav.SideNav;
 import com.vaadin.flow.component.sidenav.SideNavItem;
+import com.vaadin.flow.data.renderer.LitRenderer;
+import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -36,11 +39,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
-
 @PermitAll
-public final class MainLayout extends AppLayout implements RouterLayout{
+public final class MainLayout extends AppLayout implements RouterLayout, AfterNavigationObserver {
 
     H2 viewTitle;
+    Button themeToggle;
 
     YearMonthField periodField;
 
@@ -53,15 +56,20 @@ public final class MainLayout extends AppLayout implements RouterLayout{
         this.authenticatedUser = authenticatedUser;
 
         authentication = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication());
+
         appData = VaadinSession.getCurrent().getAttribute(AppData.class);
-        if(appData == null){
+        if (appData == null) {
             appData = new AppData();
             VaadinSession.getCurrent().setAttribute(AppData.class, appData);
         }
 
         setPrimarySection(Section.DRAWER);
+
         addHeaderContent();
-        addToDrawer(createApplicationHeader(), createApplicationDrawer(), createApplicationFooter());
+
+        addToDrawer(createApplicationHeader(),
+                createApplicationDrawer(),
+                createApplicationFooter());
     }
 
     private void addHeaderContent(){
@@ -69,30 +77,26 @@ public final class MainLayout extends AppLayout implements RouterLayout{
         toggle.getElement().setAttribute("aria-label", "Menu toggle");
 
         viewTitle = new H2();
-        viewTitle.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.NONE);
+        viewTitle.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.Margin.NONE);
 
-        VerticalLayout vLayout = new VerticalLayout();
+        HorizontalLayout vLayout = new HorizontalLayout();
         vLayout.addClassName("period-section");
         vLayout.setAlignItems(FlexComponent.Alignment.END);
         periodField = new YearMonthField();
         periodField.addClassName("period-field");
-        periodField.addValueChangeListener(event ->{
-            changeValueDatePeriod();
-        });
-
-        vLayout.add(periodField);
+        periodField.addValueChangeListener(event -> changeValueDatePeriod());
+        vLayout.add(createLanguageSwitch(), createThemeToggle(), periodField);
 
         HorizontalLayout mainHeaderBar = new HorizontalLayout(toggle, viewTitle, vLayout);
         mainHeaderBar.addClassName("app-navbar-main");
         mainHeaderBar.setWidthFull();
-        mainHeaderBar.setSpacing(false);
+        mainHeaderBar.setSpacing(true);
         mainHeaderBar.setPadding(false);
         mainHeaderBar.setAlignItems(FlexComponent.Alignment.CENTER);
-        mainHeaderBar.expand(viewTitle);
+        mainHeaderBar.setFlexGrow(1, viewTitle);
+        mainHeaderBar.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
 
-        HorizontalLayout menuHeaderBar = createMenuHeaderBar();
-
-        VerticalLayout navbar = new VerticalLayout(menuHeaderBar, mainHeaderBar);
+        VerticalLayout navbar = new VerticalLayout(mainHeaderBar);
         navbar.addClassName("app-navbar-stack");
         navbar.setPadding(false);
         navbar.setSpacing(false);
@@ -102,28 +106,31 @@ public final class MainLayout extends AppLayout implements RouterLayout{
         changeValueDatePeriod();
     }
 
-    private HorizontalLayout createMenuHeaderBar() {
-        HorizontalLayout menuHeaderBar = new HorizontalLayout();
+    private Button createThemeToggle() {
+        themeToggle = new Button();
+        themeToggle.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+        themeToggle.addClassName("theme-toggle-button");
+        themeToggle.setAriaLabel("Toggle dark mode");
+        updateThemeToggleIcon(false);
 
-        Button btnSetup = new Button("Setup");
-        btnSetup.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        btnSetup.addClassName("app-header-menu-button");
-//        btnSetup.addClickListener(event -> UI.getCurrent().navigate(""));
-        menuHeaderBar.add(btnSetup);
+        themeToggle.addClickListener(event -> {
+            boolean darkMode = !themeToggle.getElement().getProperty("data-dark", false);
+            HelixUiConfiguration.setDarkMode(darkMode);
+            updateThemeToggleIcon(darkMode);
+        });
 
-        Button btnMaster = new Button("Master");
-        btnMaster.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        btnMaster.addClassName("app-header-menu-button");
-//        btnSetup.addClickListener(event -> UI.getCurrent().navigate(""));
-        menuHeaderBar.add(btnMaster);
+        themeToggle.getElement().executeJs(
+                "return localStorage.getItem($0) === 'true';",
+                HelixUiConfiguration.DARK_MODE_STORAGE_KEY
+        ).then(Boolean.class, isDark -> updateThemeToggleIcon(Boolean.TRUE.equals(isDark)));
 
-        menuHeaderBar.add(createLanguageSwitch());
+        return themeToggle;
+    }
 
-        menuHeaderBar.addClassName("app-navbar-actions");
-        menuHeaderBar.setWidthFull();
-        menuHeaderBar.setAlignItems(FlexComponent.Alignment.CENTER);
-        menuHeaderBar.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
-        return menuHeaderBar;
+    private void updateThemeToggleIcon(boolean darkMode) {
+        themeToggle.setIcon(new Icon(darkMode ? VaadinIcon.SUN_O : VaadinIcon.MOON_O));
+        themeToggle.getElement().setProperty("data-dark", darkMode);
+        themeToggle.setTooltipText(darkMode ? "Switch to light mode" : "Switch to dark mode");
     }
 
     private Component createLanguageSwitch() {
@@ -154,9 +161,8 @@ public final class MainLayout extends AppLayout implements RouterLayout{
         button.setIcon(flag);
         button.setText(label);
         button.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-        button.addClassName("language-button");
         if (active) {
-            button.addClassName("active");
+            button.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
         }
         button.addClickListener(event -> changeLanguage(locale));
         return button;
@@ -170,6 +176,7 @@ public final class MainLayout extends AppLayout implements RouterLayout{
 
     private Component createApplicationHeader() {
         Image logo = new Image("images/logo.png", "Helix");
+        logo.setWidth("150px");
         logo.addClassName("drawer-logo");
 
         HorizontalLayout header = new HorizontalLayout(logo);
@@ -185,6 +192,10 @@ public final class MainLayout extends AppLayout implements RouterLayout{
         return scroller;
     }
 
+    /**
+     * The logged-in user's account menu (or the sign-in link), pinned at the
+     * bottom of the drawer.
+     */
     private Component createApplicationFooter() {
         var layout = new Footer();
 
@@ -197,8 +208,7 @@ public final class MainLayout extends AppLayout implements RouterLayout{
 
             MenuItem userName = userMenu.addItem("");
             Div div = new Div();
-            div.add(user.getRegisteredName());
-//            div.add(new Icon("lumo", "dropdown"));
+            div.add(createAccountComponent(user));
             div.getElement().getStyle().set("display", "flex");
             div.getElement().getStyle().set("align-items", "center");
             div.getElement().getStyle().set("gap", "var(--lumo-space-s)");
@@ -233,7 +243,57 @@ public final class MainLayout extends AppLayout implements RouterLayout{
         return layout;
     }
 
+//    private static Renderer<UserCredentials> createAccountRenderer() {
+//        return LitRenderer
+//                .<UserCredentials> of(
+//                        """
+//                                <div class="person-item">
+//                                  <vaadin-avatar img="${item.pictureUrl}" name="${item.fullName}" style="--vaadin-avatar-size: 2.25rem"></vaadin-avatar>
+//                                  <span>${item.fullName}</span>
+//                                  <span>${item.email}</span>
+//                                </div>
+//                                """)
+//                .withProperty("pictureUrl", null)
+//                .withProperty("fullName", UserCredentials::getRegisteredName)
+//                .withProperty("email", UserCredentials::getEmail);
+//    }
+
+    private static Component createAccountComponent(UserCredentials item) {
+
+        Avatar avatar = new Avatar(item.getRegisteredName());
+        avatar.setImage("/images/default-user.jpeg");
+        avatar.getStyle().set("--vaadin-avatar-size", "2.25rem");
+
+        Span name = new Span(item.getRegisteredName());
+        name.getStyle()
+                .set("font-weight", "600");
+
+        Span email = new Span(item.getEmail());
+        email.getStyle()
+                .set("font-size", "0.75rem")
+                .set("font-style", "italic")
+                .set("color", "var(--lumo-secondary-text-color)");
+
+        VerticalLayout textLayout = new VerticalLayout(name, email);
+        textLayout.setPadding(false);
+        textLayout.setSpacing(false);
+        textLayout.setMargin(false);
+
+        HorizontalLayout layout = new HorizontalLayout(avatar, textLayout);
+        layout.setAlignItems(FlexComponent.Alignment.CENTER);
+        layout.setSpacing(true);
+
+        return layout;
+    }
+
     private void changeValueDatePeriod(){
+        AppData appdata = VaadinSession.getCurrent().getAttribute(AppData.class);
+
+        if(appdata == null){
+            appdata = new AppData();
+            VaadinSession.getCurrent().setAttribute(AppData.class, appdata);
+        }
+
         appData.setFirstPeriod(periodField.getValue().atDay(1));
         appData.setLastPeriod(periodField.getValue().atEndOfMonth());
     }
@@ -257,5 +317,26 @@ public final class MainLayout extends AppLayout implements RouterLayout{
         } else {
             return new SideNavItem(menuEntry.title(), menuEntry.menuClass());
         }
+    }
+
+    @Override
+    public void afterNavigation(AfterNavigationEvent event) {
+
+        // IMPORTANT: getActiveChain() is ordered leaf-view FIRST, outermost layout LAST.
+        // get(size() - 1) was grabbing MainLayout itself (no @PageTitle there), which is
+        // why the "Helix | X" logic never actually picked up the view's title.
+        // The actual routed view/leaf component is at index 0.
+        Object view = event.getActiveChain().get(0);
+
+        String title = "";
+
+        if (view != null) {
+            PageTitle annotation = view.getClass().getAnnotation(PageTitle.class);
+            if (annotation != null) {
+                title = annotation.value();
+            }
+        }
+
+        viewTitle.setText(title);
     }
 }

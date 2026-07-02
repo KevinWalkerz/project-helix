@@ -22,7 +22,7 @@ public class ImageFile{
     @Enumerated(EnumType.STRING)
     private ImageStoreType storeType;
 
-    private int fileSize; //default in KB
+    private int fileSize;
 
-    private String filePath;
+    private String filePath; // relative path, LOCAL_STORAGE -> path storage, CLOUD_STORAGE -> path cloud storage
 }
